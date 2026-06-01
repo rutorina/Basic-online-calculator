@@ -67,10 +67,8 @@ calculator.addEventListener("click", (e) => {
             display.value += "9";
             break;
         case "zero":
-            lastNumber = display.value.split(/[\+\-\*\/]/).pop();
-            if (!display.value.endsWith("/")) {
                 display.value += "0";
-            }
+            // }
             break;
         default:
             break;
@@ -80,23 +78,62 @@ calculator.addEventListener("click", (e) => {
 
 function replaceOperators(newOperator) {
 
-    if (display.value.endsWith("/") || display.value.endsWith("*") || display.value === "" && (newOperator === "*" || newOperator === "/")) {
-        display.value += newOperator;
+    if (newOperator === "*" || newOperator === "/") {
+        if (!display.value.endsWith("/") && !display.value.endsWith("*") && !display.value.endsWith("-") && !display.value.endsWith("+") && display.value !== "") {
+            display.value += newOperator;
+        }
+        if (display.value.endsWith("/") && newOperator === "*") {
+            display.value = display.value.slice(0, -1);
+            display.value += newOperator;
+        }
+        if (display.value.endsWith("*") && newOperator === "/") {
+            display.value = display.value.slice(0, -1);
+            display.value += newOperator;
+        }
     }
-    else if (display.value.endsWith("/") || display.value.endsWith("*") || display.value.endsWith("-") || display.value.endsWith("+")) {
-        display.value = display.value.slice(0, -1);
-        display.value += newOperator;
-    }
-    else if (display.value !== "") {
-        display.value += newOperator;
+    if (newOperator === "+" || newOperator === "-") {
+        if (!display.value.endsWith("-") && !display.value.endsWith("+")) {
+            display.value += newOperator;
+        }
+        if (display.value.endsWith("-") && newOperator === "+") {
+            display.value = display.value.slice(0, -1);
+            display.value += newOperator;
+        }
+        if (display.value.endsWith("+") && newOperator === "-") {
+            display.value = display.value.slice(0, -1);
+            display.value += newOperator;
+        }
     }
 }
 
 function evaluateExpression(expression) {
-    const tokens = expression.match(/\d+(?:\.\d+)?|[+\-*/]/g);
+    const rawTokens = expression.match(/\d+(?:\.\d+)?|[+\-*/]/g);
 
-    if (!tokens || tokens.join("") !== expression) {
+    if (!rawTokens || rawTokens.join("") !== expression) {
         throw new Error("Invalid expression");
+    }
+
+    const isOperator = (token) => token === "+" || token === "-" || token === "*" || token === "/";
+    const tokens = [];
+
+    for (let i = 0; i < rawTokens.length; i++) {
+        const token = rawTokens[i];
+        const prevToken = rawTokens[i - 1];
+
+        // Treat +/- as unary sign at the start or right after another operator.
+        if ((token === "+" || token === "-") && (i === 0 || isOperator(prevToken))) {
+            const nextToken = rawTokens[i + 1];
+
+            if (!nextToken || isOperator(nextToken)) {
+                throw new Error("Invalid expression");
+            }
+
+            tokens.push(token + nextToken);
+            i++;
+            continue;
+        }
+
+        tokens.push(token);
     }
 
     const values = [];
